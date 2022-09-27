@@ -1,0 +1,219 @@
+#include<ESP8266WiFi.h>
+#include<WiFiClient.h>
+#include<ESP8266WebServer.h>
+#include<LiquidCrystal.h>
+#include<Wire.h>
+LiquidCrystal lcd(16,5,4,0,13,15);
+
+
+const char* ssid = "AndroidAPE9D2";//Replace with your network SSID
+const char* password = "passwordo";//Replace with your network password
+
+ESP8266WebServer server(80);
+String page = "";
+char input[12];
+int count = 0;
+int a;
+int p1=0,p2=0,p3=0,p4=0;
+int c1=0,c2=0,c3=0,c4=0;
+
+double total = 0;
+int count_prod = 0;
+void setup()
+{
+  pinMode(12,INPUT_PULLUP);
+  pinMode(14,OUTPUT);
+ 
+  pinMode(2,OUTPUT);
+  
+  Serial.begin(9600);
+  WiFi.begin(ssid, password);
+  Wire.begin(D2, D1);
+  
+  lcd.begin(16,2);
+lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("   WELCOME TO    ");
+ 
+ 
+  lcd.setCursor(0, 1);
+  lcd.print("  IoT Based"  );
+  lcd.setCursor(0,2);
+  lcd.print(" SMART CART" );
+  delay(2000);
+  lcd.clear();
+ while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+  lcd.setCursor(0, 0);
+  lcd.print(" WiFi Connecting..");
+  }
+ // Serial.print(WiFi.localIP());
+ lcd.clear();
+  lcd.setCursor(0, 1);
+  lcd.print(" WiFi Connected ");
+  lcd.setCursor(0,2);
+  lcd.print(WiFi.localIP());
+  Serial.print(WiFi.localIP());
+  delay(2000);
+
+  
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(" PLZ SCAN ITEMS     ");
+  lcd.setCursor(0, 1);
+  lcd.print("    TO CART          ");
+  server.on("/", []()
+  {
+    page = "<html><head><title>E Cart using IoT</title></head><style type=\"text/css\">";
+    page += "table{border-collapse: collapse;}th {background-color:  #3498db ;color: white;}table,td {border: 4px solid black;font-size: x-large;";
+    page += "text-align:center;border-style: groove;border-color: rgb(255,0,0);}</style><body><center>";
+    page += "<h1>Smart Shopping Cart using IoT</h1><br><br><table style=\"width: 1200px;height: 450px;\"><tr>";
+    page += "<th>ITEMS</th><th>QUANTITY</th><th>COST</th></tr><tr><td>milk</td><td>"+String(p1)+"</td><td>"+String(c1)+"</td></tr>";
+    page += "<tr><td>biscuit</td><td>"+String(p2)+"</td><td>"+String(c2)+"</td></tr>";
+    page += "</td></tr><tr><th>Grand Total</th><th>"+String(count_prod)+"</th><th>"+String(total)+"</th>";
+    page += "</tr></table><br><input type=\"button\" name=\"Pay Now\" value=\"Pay Now\" style=\"width: 200px;height: 50px\"></center></body></html>, page)";
+    page += "<meta http-equiv=\"refresh\" content=\"2\">";
+    server.send(200, "text/html", page);
+  });
+  server.begin();
+
+}
+void loop()
+{
+  int a=digitalRead(12);
+  if (Serial.available())
+  {
+    count = 0;
+    while (Serial.available() && count < 12)
+    {
+      input[count] = Serial.read();
+      count++;
+      delay(5);
+     
+    }
+    if (count == 12)
+    {
+        Serial.println(input);
+      if ((strncmp(input, "2B006DBE3DC5І", 12) == 0)&&(a == 1))
+      {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("  Milk Added     ");
+        lcd.setCursor(0, 1);
+        lcd.print("Price(Rs):24.00   ");
+        p1++;
+        digitalWrite(14,HIGH);
+        digitalWrite(2,HIGH);
+        delay(1000);
+        total = total + 24.00;
+        count_prod++;
+        digitalWrite(14,LOW);
+        digitalWrite(2,LOW);
+        
+      }
+      else if ((strncmp(input, "2B006DBE3DC5І", 12) == 0)&&(a == 0))
+      {
+        if(p1>0)
+        {
+        lcd.clear();
+        lcd.setCursor(3, 0);
+        lcd.print("Milk Removed!!");
+        digitalWrite(14,HIGH);
+       
+        delay(1000);
+        p1--;
+        total = total - 24.00;
+        count_prod--;
+        
+        digitalWrite(14,LOW);
+        
+        }
+        else
+        {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Not in cart!!!        ");
+        digitalWrite(14,HIGH);
+      
+        delay(2000);
+        digitalWrite(14,LOW);
+       
+       
+        }
+      }
+      else if ((strncmp(input, "2B006DBB3EC3", 12) == 0)&&(a == 1))
+      {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print(" Biscuits Added  ");
+        Serial.print("biscut");
+        lcd.setCursor(0, 2);
+        lcd.print("Price(Rs):10.00 ");
+        total = total + 10.00;
+        digitalWrite(14,HIGH);
+        digitalWrite(2,HIGH);
+        delay(1000);
+        p2++;
+        count_prod++;
+        digitalWrite(14,LOW);
+        digitalWrite(2,LOW);
+       
+      }
+      else if ((strncmp(input, "2B006DBB3EC3", 12) == 0)&&(a == 0))
+      {
+         if(p2>0)
+        {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Biscuits Removed!!");
+        digitalWrite(14,HIGH);
+       
+        delay(2000);
+        p2--;
+        
+        total = total - 10.00;
+        count_prod--;
+        digitalWrite(14,LOW);
+        
+        }
+        else
+        {
+        lcd.clear();
+        lcd.setCursor(3, 0);
+        lcd.print("Not in cart!!!        ");
+        digitalWrite(14,HIGH);
+       
+        delay(1000);
+        
+        digitalWrite(14,LOW);
+     
+        }
+      }
+      
+      
+      else if (strncmp(input, "2B006D6088AE", 12) == 0)
+      {
+        
+     
+        lcd.clear();
+        digitalWrite(14,HIGH);
+        digitalWrite(2,HIGH);
+        delay(1500);
+        lcd.setCursor(1, 0);
+        lcd.print("   Thank you        ");
+        lcd.setCursor(0, 1);
+        lcd.print("  Total :");
+        lcd.setCursor(9, 1);
+        lcd.print(total);
+        digitalWrite(14,LOW);
+        digitalWrite(2,LOW);
+      }
+    }
+    c1=p1*24.00;
+    c2=p2*10.00;
+    c3=p3*20.00;
+    c4=p4*35.00;
+  }
+server.handleClient();
+}
